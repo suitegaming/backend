@@ -9,4 +9,5 @@ public class CreateTurnoDto {
     private TurnoDto turno;
     private List<InventoryMovementDto> movements;
     private List<RetiroDetalleDto> retiros;
+    private List<YapeDetalleDto> yapes;
 }

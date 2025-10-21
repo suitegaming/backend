@@ -31,6 +31,9 @@ public class TurnoService {
     private RetiroDetalleRepository retiroDetalleRepository;
 
     @Autowired
+    private YapeDetalleRepository yapeDetalleRepository;
+
+    @Autowired
     private CajaService cajaService;
 
     
@@ -89,6 +92,14 @@ public class TurnoService {
             retiroDetalleRepository.save(retiroDetalle);
         }
 
+        for (YapeDetalleDto yapeDto : createTurnoDto.getYapes()) {
+            YapeDetalle yapeDetalle = new YapeDetalle();
+            yapeDetalle.setDetalle(yapeDto.getDetalle());
+            yapeDetalle.setMonto(yapeDto.getMonto());
+            yapeDetalle.setTurno(savedTurno);
+            yapeDetalleRepository.save(yapeDetalle);
+        }
+
         cajaService.agregarEfectivo(savedTurno.getEfectivo());
 
         return mapToTurnoResponseDto(savedTurno);
@@ -121,6 +132,9 @@ public class TurnoService {
         List<RetiroDetalle> retiros = retiroDetalleRepository.findByTurno(turno);
         retiroDetalleRepository.deleteAll(retiros);
 
+        List<YapeDetalle> yapes = yapeDetalleRepository.findByTurno(turno);
+        yapeDetalleRepository.deleteAll(yapes);
+
         // Finalmente, eliminar el turno
         turnoRepository.deleteById(id);
     }
@@ -131,6 +145,7 @@ public class TurnoService {
 
         List<InventoryMovement> movements = inventoryMovementRepository.findByTurno(turno);
         List<RetiroDetalle> retiros = retiroDetalleRepository.findByTurno(turno);
+        List<YapeDetalle> yapes = yapeDetalleRepository.findByTurno(turno);
 
         List<InventoryMovementResponseDto> movementDtos = movements.stream().map(movement -> {
             InventoryMovementResponseDto dto = new InventoryMovementResponseDto();
@@ -150,6 +165,13 @@ public class TurnoService {
             return dto;
         }).collect(Collectors.toList());
 
+        List<YapeDetalleDto> yapeDtos = yapes.stream().map(yape -> {
+            YapeDetalleDto dto = new YapeDetalleDto();
+            dto.setDetalle(yape.getDetalle());
+            dto.setMonto(yape.getMonto());
+            return dto;
+        }).collect(Collectors.toList());
+
         java.math.BigDecimal totalSales = movementDtos.stream()
                 .filter(dto -> dto.getType() == com.souldevec.security.enums.MovementType.OUT)
                 .map(InventoryMovementResponseDto::getTotalPrice)
@@ -158,6 +180,7 @@ public class TurnoService {
         TurnoSummaryDto summaryDto = new TurnoSummaryDto();
         summaryDto.setMovements(movementDtos);
         summaryDto.setRetiros(retiroDtos);
+        summaryDto.setYapes(yapeDtos);
         summaryDto.setTotalSales(totalSales);
         summaryDto.setTurno(mapToTurnoResponseDto(turno));
 

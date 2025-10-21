@@ -10,5 +10,6 @@ public class TurnoSummaryDto {
     private TurnoResponseDto turno;
     private List<InventoryMovementResponseDto> movements;
     private List<RetiroDetalleDto> retiros;
+    private List<YapeDetalleDto> yapes;
     private BigDecimal totalSales;
 }
