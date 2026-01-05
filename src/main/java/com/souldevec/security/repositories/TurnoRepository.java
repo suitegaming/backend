@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface TurnoRepository extends JpaRepository<Turno, Long> {
@@ -16,4 +17,6 @@ public interface TurnoRepository extends JpaRepository<Turno, Long> {
     List<Turno> findAllWithUser();
 
     List<Turno> findByFechaBetween(LocalDate startDate, LocalDate endDate);
+
+    Optional<Turno> findTopByFechaOrderByHoraSalidaDesc(LocalDate fecha);
 }

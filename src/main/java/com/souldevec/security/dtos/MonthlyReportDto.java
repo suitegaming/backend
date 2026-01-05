@@ -13,7 +13,7 @@ public class MonthlyReportDto {
     private BigDecimal totalRetirosMes = BigDecimal.ZERO;
     private BigDecimal totalIngresoInventarioMes = BigDecimal.ZERO;
     private Integer totalUsuariosMes = 0;
-    private BigDecimal totalKwMes = BigDecimal.ZERO;
+    private BigDecimal totalKwConsumidosMes = BigDecimal.ZERO;
     private BigDecimal totalDineroPancafeMes = BigDecimal.ZERO;
     private BigDecimal totalUsanzaPancafeMes = BigDecimal.ZERO;
     private BigDecimal totalIngresosMes = BigDecimal.ZERO;

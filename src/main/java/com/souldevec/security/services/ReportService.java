@@ -10,8 +10,11 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,41 +28,55 @@ public class ReportService {
         LocalDate startDate = yearMonth.atDay(1);
         LocalDate endDate = yearMonth.atEndOfMonth();
 
-        List<Turno> turnos = turnoRepository.findByFechaBetween(startDate, endDate);
-
-        Map<LocalDate, List<Turno>> turnosByDay = turnos.stream()
+        List<Turno> turnosDelMes = turnoRepository.findByFechaBetween(startDate, endDate);
+        Map<LocalDate, List<Turno>> turnosPorDia = turnosDelMes.stream()
                 .collect(Collectors.groupingBy(Turno::getFecha));
 
         MonthlyReportDto monthlyReport = new MonthlyReportDto();
+        List<DailySummaryDto> dailySummaries = new ArrayList<>();
 
-        List<DailySummaryDto> dailySummaries = turnosByDay.entrySet().stream()
-                .map(entry -> {
-                    DailySummaryDto dailySummary = new DailySummaryDto();
-                    dailySummary.setDate(entry.getKey());
+        Optional<Turno> ultimoTurnoDiaAnterior = turnoRepository.findTopByFechaOrderByHoraSalidaDesc(startDate.minusDays(1));
+        BigDecimal kwLecturaAnterior = ultimoTurnoDiaAnterior.map(Turno::getKw).orElse(BigDecimal.ZERO);
 
-                    for (Turno turno : entry.getValue()) {
-                        dailySummary.setTotalEfectivo(dailySummary.getTotalEfectivo().add(turno.getEfectivo()));
-                        dailySummary.setTotalYape(dailySummary.getTotalYape().add(turno.getYape()));
-                        dailySummary.setTotalSnacks(dailySummary.getTotalSnacks().add(turno.getSnacks()));
-                        dailySummary.setTotalConsumo(dailySummary.getTotalConsumo().add(turno.getConsumo()));
-                        dailySummary.setTotalRetiros(dailySummary.getTotalRetiros().add(turno.getRetiros()));
-                        dailySummary.setTotalIngresoInventario(dailySummary.getTotalIngresoInventario().add(turno.getIngresoInventario()));
-                        dailySummary.setTotalUsuarios(dailySummary.getTotalUsuarios() + turno.getUsuarios());
-                        dailySummary.setTotalKw(dailySummary.getTotalKw().add(turno.getKw()));
-                        dailySummary.setTotalDineroPancafe(dailySummary.getTotalDineroPancafe().add(turno.getDineroPancafe()));
-                        dailySummary.setTotalUsanzaPancafe(dailySummary.getTotalUsanzaPancafe().add(turno.getUsanzaPancafe()));
-                    }
+        for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
+            DailySummaryDto dailySummary = new DailySummaryDto();
+            dailySummary.setDate(date);
 
-                    BigDecimal totalIngresosDia = dailySummary.getTotalDineroPancafe().add(dailySummary.getTotalSnacks());
-                    BigDecimal totalGastosDia = dailySummary.getTotalRetiros().add(dailySummary.getTotalConsumo());
-                    dailySummary.setTotalIngresos(totalIngresosDia);
-                    dailySummary.setTotalGastos(totalGastosDia);
-                    dailySummary.setDiferenciaDia(totalIngresosDia.subtract(totalGastosDia).subtract(dailySummary.getTotalEfectivo()).subtract(dailySummary.getTotalYape()));
+            List<Turno> turnosDelDia = turnosPorDia.get(date);
 
-                    return dailySummary;
-                })
-                .sorted((a, b) -> a.getDate().compareTo(b.getDate()))
-                .collect(Collectors.toList());
+            if (turnosDelDia != null && !turnosDelDia.isEmpty()) {
+                for (Turno turno : turnosDelDia) {
+                    dailySummary.setTotalEfectivo(dailySummary.getTotalEfectivo().add(turno.getEfectivo()));
+                    dailySummary.setTotalYape(dailySummary.getTotalYape().add(turno.getYape()));
+                    dailySummary.setTotalSnacks(dailySummary.getTotalSnacks().add(turno.getSnacks()));
+                    dailySummary.setTotalConsumo(dailySummary.getTotalConsumo().add(turno.getConsumo()));
+                    dailySummary.setTotalRetiros(dailySummary.getTotalRetiros().add(turno.getRetiros()));
+                    dailySummary.setTotalIngresoInventario(dailySummary.getTotalIngresoInventario().add(turno.getIngresoInventario()));
+                    dailySummary.setTotalUsuarios(dailySummary.getTotalUsuarios() + turno.getUsuarios());
+                    dailySummary.setTotalDineroPancafe(dailySummary.getTotalDineroPancafe().add(turno.getDineroPancafe()));
+                    dailySummary.setTotalUsanzaPancafe(dailySummary.getTotalUsanzaPancafe().add(turno.getUsanzaPancafe()));
+                }
+
+                BigDecimal totalIngresosDia = dailySummary.getTotalDineroPancafe().add(dailySummary.getTotalSnacks());
+                BigDecimal totalGastosDia = dailySummary.getTotalRetiros().add(dailySummary.getTotalConsumo());
+                dailySummary.setTotalIngresos(totalIngresosDia);
+                dailySummary.setTotalGastos(totalGastosDia);
+                dailySummary.setDiferenciaDia(totalIngresosDia.subtract(totalGastosDia).subtract(dailySummary.getTotalEfectivo()).subtract(dailySummary.getTotalYape()));
+
+                // Calcular KW consumidos
+                BigDecimal kwLecturaActual = turnosDelDia.stream()
+                        .max(Comparator.comparing(Turno::getHoraSalida))
+                        .map(Turno::getKw)
+                        .orElse(kwLecturaAnterior);
+
+                if (kwLecturaAnterior.compareTo(BigDecimal.ZERO) > 0) { // No calcular consumo para el primer día sin datos previos
+                    dailySummary.setKwConsumidos(kwLecturaActual.subtract(kwLecturaAnterior));
+                }
+                kwLecturaAnterior = kwLecturaActual;
+
+            }
+            dailySummaries.add(dailySummary);
+        }
 
         monthlyReport.setDailySummaries(dailySummaries);
 
@@ -72,7 +89,7 @@ public class ReportService {
             monthlyReport.setTotalRetirosMes(monthlyReport.getTotalRetirosMes().add(daily.getTotalRetiros()));
             monthlyReport.setTotalIngresoInventarioMes(monthlyReport.getTotalIngresoInventarioMes().add(daily.getTotalIngresoInventario()));
             monthlyReport.setTotalUsuariosMes(monthlyReport.getTotalUsuariosMes() + daily.getTotalUsuarios());
-            monthlyReport.setTotalKwMes(monthlyReport.getTotalKwMes().add(daily.getTotalKw()));
+            monthlyReport.setTotalKwConsumidosMes(monthlyReport.getTotalKwConsumidosMes().add(daily.getKwConsumidos()));
             monthlyReport.setTotalDineroPancafeMes(monthlyReport.getTotalDineroPancafeMes().add(daily.getTotalDineroPancafe()));
             monthlyReport.setTotalUsanzaPancafeMes(monthlyReport.getTotalUsanzaPancafeMes().add(daily.getTotalUsanzaPancafe()));
             monthlyReport.setTotalIngresosMes(monthlyReport.getTotalIngresosMes().add(daily.getTotalIngresos()));

@@ -14,7 +14,7 @@ public class DailySummaryDto {
     private BigDecimal totalRetiros = BigDecimal.ZERO;
     private BigDecimal totalIngresoInventario = BigDecimal.ZERO;
     private Integer totalUsuarios = 0;
-    private BigDecimal totalKw = BigDecimal.ZERO;
+    private BigDecimal kwConsumidos = BigDecimal.ZERO;
     private BigDecimal totalDineroPancafe = BigDecimal.ZERO;
     private BigDecimal totalUsanzaPancafe = BigDecimal.ZERO;
     private BigDecimal totalIngresos = BigDecimal.ZERO;
