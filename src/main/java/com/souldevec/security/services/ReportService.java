@@ -65,7 +65,7 @@ public class ReportService {
 
                 // Calcular KW consumidos
                 BigDecimal kwLecturaActual = turnosDelDia.stream()
-                        .max(Comparator.comparing(Turno::getHoraSalida))
+                        .max(Comparator.comparing(Turno::getId))
                         .map(Turno::getKw)
                         .orElse(kwLecturaAnterior);
 
