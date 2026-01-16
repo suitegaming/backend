@@ -2,9 +2,15 @@ package com.souldevec.security.services;
 
 import com.souldevec.security.dtos.DailySummaryDto;
 import com.souldevec.security.dtos.MonthlyReportDto;
+import com.souldevec.security.dtos.ProductSalesDto;
+import com.souldevec.security.dtos.SnackProfitDto;
 import com.souldevec.security.entities.Gasto;
+import com.souldevec.security.entities.InventoryMovement;
+import com.souldevec.security.entities.Product;
 import com.souldevec.security.entities.Turno;
+import com.souldevec.security.enums.MovementType;
 import com.souldevec.security.repositories.GastoRepository;
+import com.souldevec.security.repositories.InventoryMovementRepository;
 import com.souldevec.security.repositories.TurnoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -13,6 +19,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -29,6 +36,9 @@ public class ReportService {
 
     @Autowired
     private GastoRepository gastoRepository;
+
+    @Autowired
+    private InventoryMovementRepository inventoryMovementRepository;
 
     public MonthlyReportDto getMonthlyReport(int year, int month) {
         YearMonth yearMonth = YearMonth.of(year, month);
@@ -133,4 +143,49 @@ public class ReportService {
 
         return monthlyReport;
     }
+
+    public List<ProductSalesDto> getBestSellingProducts(LocalDate startDate, LocalDate endDate) {
+        LocalDateTime startDateTime = startDate.atStartOfDay();
+        LocalDateTime endDateTime = endDate.atTime(LocalTime.MAX);
+
+        List<InventoryMovement> salesMovements = inventoryMovementRepository.findByTypeAndTimestampBetween(MovementType.OUT, startDateTime, endDateTime);
+
+        Map<Product, Long> salesByProduct = salesMovements.stream()
+                .collect(Collectors.groupingBy(
+                        InventoryMovement::getProduct,
+                        Collectors.summingLong(InventoryMovement::getQuantity)
+                ));
+
+        return salesByProduct.entrySet().stream()
+                .map(entry -> new ProductSalesDto(
+                        entry.getKey().getId(),
+                        entry.getKey().getName(),
+                        entry.getValue()
+                ))
+                .sorted(Comparator.comparingLong(ProductSalesDto::getTotalQuantitySold).reversed())
+                .collect(Collectors.toList());
+    }
+
+    public SnackProfitDto getSnackProfit(LocalDate startDate, LocalDate endDate) {
+        LocalDateTime startDateTime = startDate.atStartOfDay();
+        LocalDateTime endDateTime = endDate.atTime(LocalTime.MAX);
+
+        List<InventoryMovement> salesMovements = inventoryMovementRepository.findByTypeAndTimestampBetween(MovementType.OUT, startDateTime, endDateTime);
+
+        BigDecimal totalRevenue = BigDecimal.ZERO;
+        BigDecimal totalCost = BigDecimal.ZERO;
+
+        for (InventoryMovement movement : salesMovements) {
+            Product product = movement.getProduct();
+            BigDecimal quantity = new BigDecimal(movement.getQuantity());
+
+            totalRevenue = totalRevenue.add(product.getSellingPrice().multiply(quantity));
+            totalCost = totalCost.add(product.getPurchasePrice().multiply(quantity));
+        }
+
+        BigDecimal totalProfit = totalRevenue.subtract(totalCost);
+
+        return new SnackProfitDto(totalRevenue, totalCost, totalProfit, startDate, endDate);
+    }
 }
+
