@@ -2,7 +2,9 @@ package com.souldevec.security.services;
 
 import com.souldevec.security.dtos.DailySummaryDto;
 import com.souldevec.security.dtos.MonthlyReportDto;
+import com.souldevec.security.entities.Gasto;
 import com.souldevec.security.entities.Turno;
+import com.souldevec.security.repositories.GastoRepository;
 import com.souldevec.security.repositories.TurnoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -10,6 +12,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -23,6 +26,9 @@ public class ReportService {
 
     @Autowired
     private TurnoRepository turnoRepository;
+
+    @Autowired
+    private GastoRepository gastoRepository;
 
     public MonthlyReportDto getMonthlyReport(int year, int month) {
         YearMonth yearMonth = YearMonth.of(year, month);
@@ -59,10 +65,20 @@ public class ReportService {
                 }
 
                 BigDecimal totalIngresosDia = dailySummary.getTotalDineroPancafe().add(dailySummary.getTotalSnacks());
-                BigDecimal totalGastosDia = dailySummary.getTotalRetiros().add(dailySummary.getTotalConsumo());
                 dailySummary.setTotalIngresos(totalIngresosDia);
-                dailySummary.setTotalGastos(totalGastosDia);
-                dailySummary.setDiferenciaDia(totalIngresosDia.subtract(totalGastosDia).subtract(dailySummary.getTotalEfectivo()).subtract(dailySummary.getTotalYape()));
+                
+                LocalDateTime startOfDay = date.atStartOfDay();
+                LocalDateTime endOfDay = date.atTime(23, 59, 59);
+                List<Gasto> gastosDelDia = gastoRepository.findByTimestampBetween(startOfDay, endOfDay);
+
+                BigDecimal totalGastosCalculados = gastosDelDia.stream()
+                    .filter(gasto -> gasto.getAmount().compareTo(BigDecimal.ZERO) > 0 &&
+                                     !gasto.getDescription().toLowerCase().startsWith("deposito"))
+                    .map(Gasto::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                dailySummary.setTotalGastos(totalGastosCalculados);
+                dailySummary.setDiferenciaDia(totalIngresosDia.subtract(totalGastosCalculados).subtract(dailySummary.getTotalEfectivo()).subtract(dailySummary.getTotalYape()));
 
                 // Calcular KW consumidos
                 BigDecimal kwLecturaActual = turnosDelDia.stream()
