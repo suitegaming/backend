@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
@@ -74,6 +75,10 @@ public class ReportService {
                 }
                 kwLecturaAnterior = kwLecturaActual;
 
+                if (dailySummary.getTotalUsanzaPancafe().compareTo(BigDecimal.ZERO) > 0) {
+                    dailySummary.setRatioKw(dailySummary.getKwConsumidos().divide(dailySummary.getTotalUsanzaPancafe(), 2, RoundingMode.HALF_UP));
+                }
+
             }
             dailySummaries.add(dailySummary);
         }
@@ -96,6 +101,19 @@ public class ReportService {
             monthlyReport.setTotalGastosMes(monthlyReport.getTotalGastosMes().add(daily.getTotalGastos()));
         }
         monthlyReport.setDiferenciaMes(monthlyReport.getTotalIngresosMes().subtract(monthlyReport.getTotalGastosMes()).subtract(monthlyReport.getTotalEfectivoMes()).subtract(monthlyReport.getTotalYapeMes()));
+
+        BigDecimal totalRatioKw = BigDecimal.ZERO;
+        int daysWithRatio = 0;
+        for (DailySummaryDto daily : dailySummaries) {
+            if (daily.getRatioKw().compareTo(BigDecimal.ZERO) > 0) {
+                totalRatioKw = totalRatioKw.add(daily.getRatioKw());
+                daysWithRatio++;
+            }
+        }
+
+        if (daysWithRatio > 0) {
+            monthlyReport.setPromedioRatioKwMes(totalRatioKw.divide(new BigDecimal(daysWithRatio), 2, RoundingMode.HALF_UP));
+        }
 
         return monthlyReport;
     }

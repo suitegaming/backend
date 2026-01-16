@@ -19,5 +19,6 @@ public class MonthlyReportDto {
     private BigDecimal totalIngresosMes = BigDecimal.ZERO;
     private BigDecimal totalGastosMes = BigDecimal.ZERO;
     private BigDecimal diferenciaMes = BigDecimal.ZERO;
+    private BigDecimal promedioRatioKwMes = BigDecimal.ZERO;
     private List<DailySummaryDto> dailySummaries;
 }

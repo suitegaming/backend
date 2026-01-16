@@ -20,4 +20,5 @@ public class DailySummaryDto {
     private BigDecimal totalIngresos = BigDecimal.ZERO;
     private BigDecimal totalGastos = BigDecimal.ZERO;
     private BigDecimal diferenciaDia = BigDecimal.ZERO;
+    private BigDecimal ratioKw = BigDecimal.ZERO;
 }
