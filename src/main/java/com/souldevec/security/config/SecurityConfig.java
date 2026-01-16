@@ -49,6 +49,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/reports/**").hasAuthority("ROLE_ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/api/turnos/**").hasAuthority("ROLE_ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/api/products/**").hasAuthority("ROLE_ADMIN")
+                .requestMatchers("/api/products/total-value").hasAuthority("ROLE_ADMIN")
                 .requestMatchers("/api/turnos/**").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
                 .requestMatchers("/api/products/**").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
                 .requestMatchers("/api/inventory/**").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")

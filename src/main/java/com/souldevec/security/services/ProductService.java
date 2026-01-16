@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -57,6 +58,12 @@ public class ProductService {
     public List<ProductHistoryDto> getProductHistory() {
         List<Product> products = productRepository.findAll();
         return products.stream().map(this::mapToProductHistoryDto).collect(Collectors.toList());
+    }
+
+    public BigDecimal getTotalInventoryValue() {
+        return productRepository.findAll().stream()
+                .map(product -> product.getSellingPrice().multiply(new BigDecimal(product.getStock())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     private ProductHistoryDto mapToProductHistoryDto(Product product) {

@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -40,5 +41,10 @@ public class ProductController {
     @GetMapping("/history")
     public ResponseEntity<List<ProductHistoryDto>> getProductHistory() {
         return ResponseEntity.ok(productService.getProductHistory());
+    }
+
+    @GetMapping("/total-value")
+    public ResponseEntity<BigDecimal> getTotalInventoryValue() {
+        return ResponseEntity.ok(productService.getTotalInventoryValue());
     }
 }
