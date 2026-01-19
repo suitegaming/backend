@@ -36,6 +36,13 @@ public class TurnoController {
         return ResponseEntity.ok(turnoService.getTurnoSummary(id));
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<TurnoResponseDto> updateTurno(@PathVariable Long id, @RequestBody CreateTurnoDto createTurnoDto) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String userName = authentication.getName();
+        return ResponseEntity.ok(turnoService.update(id, createTurnoDto, userName));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteTurno(@PathVariable Long id) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

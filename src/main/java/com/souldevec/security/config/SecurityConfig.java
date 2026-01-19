@@ -47,6 +47,7 @@ public class SecurityConfig {
                 .requestMatchers("/auth/register").hasAuthority("ROLE_ADMIN") // Solo admin puede registrar
                 .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
                 .requestMatchers("/api/reports/**").hasAuthority("ROLE_ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/turnos/**").hasAuthority("ROLE_ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/api/turnos/**").hasAuthority("ROLE_ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/api/products/**").hasAuthority("ROLE_ADMIN")
                 .requestMatchers("/api/products/total-value").hasAuthority("ROLE_ADMIN")

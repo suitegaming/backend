@@ -7,6 +7,7 @@ import lombok.Data;
 
 @Data
 public class InventoryMovementResponseDto {
+    private Long productId;
     private String productName;
     private Integer quantity;
     private MovementType type;

@@ -75,6 +75,7 @@ public class ProductService {
         List<InventoryMovement> movements = inventoryMovementRepository.findByProductOrderByTimestampDesc(product);
         List<InventoryMovementResponseDto> movementDtos = movements.stream().map(movement -> {
             InventoryMovementResponseDto movementDto = new InventoryMovementResponseDto();
+            movementDto.setProductId(movement.getProduct().getId());
             movementDto.setProductName(movement.getProduct().getName());
             movementDto.setQuantity(movement.getQuantity());
             movementDto.setType(movement.getType());
