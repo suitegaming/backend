@@ -88,7 +88,11 @@ public class ReportService {
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
                 dailySummary.setTotalGastos(totalGastosCalculados);
-                dailySummary.setDiferenciaDia(totalIngresosDia.subtract(totalGastosCalculados).subtract(dailySummary.getTotalEfectivo()).subtract(dailySummary.getTotalYape()));
+                
+                // La diferencia del día es la suma de las diferencias de cada turno
+                BigDecimal ingresosDelDia = dailySummary.getTotalDineroPancafe().add(dailySummary.getTotalSnacks());
+                BigDecimal egresosDelDia = dailySummary.getTotalRetiros().add(dailySummary.getTotalConsumo()).add(dailySummary.getTotalEfectivo()).add(dailySummary.getTotalYape());
+                dailySummary.setDiferenciaDia(ingresosDelDia.subtract(egresosDelDia));
 
                 // Calcular KW consumidos
                 BigDecimal kwLecturaActual = turnosDelDia.stream()
@@ -125,8 +129,8 @@ public class ReportService {
             monthlyReport.setTotalUsanzaPancafeMes(monthlyReport.getTotalUsanzaPancafeMes().add(daily.getTotalUsanzaPancafe()));
             monthlyReport.setTotalIngresosMes(monthlyReport.getTotalIngresosMes().add(daily.getTotalIngresos()));
             monthlyReport.setTotalGastosMes(monthlyReport.getTotalGastosMes().add(daily.getTotalGastos()));
+            monthlyReport.setDiferenciaMes(monthlyReport.getDiferenciaMes().add(daily.getDiferenciaDia()));
         }
-        monthlyReport.setDiferenciaMes(monthlyReport.getTotalIngresosMes().subtract(monthlyReport.getTotalGastosMes()).subtract(monthlyReport.getTotalEfectivoMes()).subtract(monthlyReport.getTotalYapeMes()));
 
         BigDecimal totalRatioKw = BigDecimal.ZERO;
         int daysWithRatio = 0;
