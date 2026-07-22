@@ -1,5 +1,6 @@
 package com.souldevec.security.controllers;
 
+import com.souldevec.security.dtos.AnnualReportDto;
 import com.souldevec.security.dtos.MonthlyReportDto;
 import com.souldevec.security.dtos.ProductSalesDto;
 import com.souldevec.security.dtos.SnackProfitDto;
@@ -25,6 +26,14 @@ public class ReportController {
             @RequestParam int month) {
         
         MonthlyReportDto report = reportService.getMonthlyReport(year, month);
+        return ResponseEntity.ok(report);
+    }
+
+    @GetMapping("/annual")
+    public ResponseEntity<AnnualReportDto> getAnnualReport(
+            @RequestParam int year) {
+        
+        AnnualReportDto report = reportService.getAnnualReport(year);
         return ResponseEntity.ok(report);
     }
 

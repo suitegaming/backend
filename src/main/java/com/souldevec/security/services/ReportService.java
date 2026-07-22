@@ -1,6 +1,8 @@
 package com.souldevec.security.services;
 
+import com.souldevec.security.dtos.AnnualReportDto;
 import com.souldevec.security.dtos.DailySummaryDto;
+import com.souldevec.security.dtos.MonthSummaryDto;
 import com.souldevec.security.dtos.MonthlyReportDto;
 import com.souldevec.security.dtos.ProductSalesDto;
 import com.souldevec.security.dtos.SnackProfitDto;
@@ -191,6 +193,90 @@ public class ReportService {
         BigDecimal totalProfit = totalRevenue.subtract(totalCost);
 
         return new SnackProfitDto(totalRevenue, totalCost, totalProfit, startDate, endDate);
+    }
+
+    public AnnualReportDto getAnnualReport(int year) {
+        AnnualReportDto annualReport = new AnnualReportDto(year);
+        String[] monthNames = {"Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+                               "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"};
+
+        List<MonthSummaryDto> monthlySummaries = new ArrayList<>();
+        BigDecimal totalDineroPcsAño = BigDecimal.ZERO;
+        BigDecimal totalDineroPancafeAño = BigDecimal.ZERO;
+        BigDecimal totalUsanzaPancafeAño = BigDecimal.ZERO;
+        BigDecimal totalEfectivoAño = BigDecimal.ZERO;
+        BigDecimal totalYapeAño = BigDecimal.ZERO;
+        BigDecimal totalSnacksAño = BigDecimal.ZERO;
+        BigDecimal totalRetirosAño = BigDecimal.ZERO;
+        BigDecimal totalGastosAño = BigDecimal.ZERO;
+        BigDecimal totalKwConsumidosAño = BigDecimal.ZERO;
+        BigDecimal sumRatioKw = BigDecimal.ZERO;
+        int monthsWithRatio = 0;
+        BigDecimal balanceAño = BigDecimal.ZERO;
+        int totalUsuariosAño = 0;
+
+        for (int m = 1; m <= 12; m++) {
+            MonthlyReportDto monthlyReport = getMonthlyReport(year, m);
+            MonthSummaryDto monthSummary = new MonthSummaryDto(m, monthNames[m - 1]);
+
+            BigDecimal dineroPcs = monthlyReport.getTotalEfectivoMes()
+                    .add(monthlyReport.getTotalYapeMes())
+                    .subtract(monthlyReport.getTotalSnacksMes());
+            monthSummary.setTotalDineroPcs(dineroPcs);
+            monthSummary.setTotalDineroPancafe(monthlyReport.getTotalDineroPancafeMes());
+            monthSummary.setTotalUsanzaPancafe(monthlyReport.getTotalUsanzaPancafeMes());
+            monthSummary.setTotalEfectivo(monthlyReport.getTotalEfectivoMes());
+            monthSummary.setTotalYape(monthlyReport.getTotalYapeMes());
+            monthSummary.setTotalSnacks(monthlyReport.getTotalSnacksMes());
+            monthSummary.setTotalRetiros(monthlyReport.getTotalRetirosMes());
+            monthSummary.setTotalGastos(monthlyReport.getTotalGastosMes());
+            monthSummary.setTotalKwConsumidos(monthlyReport.getTotalKwConsumidosMes());
+            monthSummary.setPromedioRatioKw(monthlyReport.getPromedioRatioKwMes());
+            monthSummary.setTotalUsuarios(monthlyReport.getTotalUsuariosMes());
+
+            BigDecimal balance = monthlyReport.getTotalEfectivoMes()
+                    .add(monthlyReport.getTotalYapeMes())
+                    .subtract(monthlyReport.getTotalGastosMes());
+            monthSummary.setBalance(balance);
+
+            monthlySummaries.add(monthSummary);
+
+            totalDineroPcsAño = totalDineroPcsAño.add(dineroPcs);
+            totalDineroPancafeAño = totalDineroPancafeAño.add(monthlyReport.getTotalDineroPancafeMes());
+            totalUsanzaPancafeAño = totalUsanzaPancafeAño.add(monthlyReport.getTotalUsanzaPancafeMes());
+            totalEfectivoAño = totalEfectivoAño.add(monthlyReport.getTotalEfectivoMes());
+            totalYapeAño = totalYapeAño.add(monthlyReport.getTotalYapeMes());
+            totalSnacksAño = totalSnacksAño.add(monthlyReport.getTotalSnacksMes());
+            totalRetirosAño = totalRetirosAño.add(monthlyReport.getTotalRetirosMes());
+            totalGastosAño = totalGastosAño.add(monthlyReport.getTotalGastosMes());
+            totalKwConsumidosAño = totalKwConsumidosAño.add(monthlyReport.getTotalKwConsumidosMes());
+            balanceAño = balanceAño.add(balance);
+            totalUsuariosAño += monthlyReport.getTotalUsuariosMes();
+
+            if (monthlyReport.getPromedioRatioKwMes().compareTo(BigDecimal.ZERO) > 0) {
+                sumRatioKw = sumRatioKw.add(monthlyReport.getPromedioRatioKwMes());
+                monthsWithRatio++;
+            }
+        }
+
+        annualReport.setMonthlySummaries(monthlySummaries);
+        annualReport.setTotalDineroPcsAño(totalDineroPcsAño);
+        annualReport.setTotalDineroPancafeAño(totalDineroPancafeAño);
+        annualReport.setTotalUsanzaPancafeAño(totalUsanzaPancafeAño);
+        annualReport.setTotalEfectivoAño(totalEfectivoAño);
+        annualReport.setTotalYapeAño(totalYapeAño);
+        annualReport.setTotalSnacksAño(totalSnacksAño);
+        annualReport.setTotalRetirosAño(totalRetirosAño);
+        annualReport.setTotalGastosAño(totalGastosAño);
+        annualReport.setTotalKwConsumidosAño(totalKwConsumidosAño);
+        annualReport.setBalanceAño(balanceAño);
+        annualReport.setTotalUsuariosAño(totalUsuariosAño);
+
+        if (monthsWithRatio > 0) {
+            annualReport.setPromedioRatioKwAño(sumRatioKw.divide(new BigDecimal(monthsWithRatio), 2, RoundingMode.HALF_UP));
+        }
+
+        return annualReport;
     }
 
     private BigDecimal getValueOrZero(BigDecimal value) {
